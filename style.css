@@ -49,6 +49,7 @@ h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
 .brand-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .meta { margin: 0; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .meta .sep { margin: 0 6px; color: var(--line); }
+.meta.notice { color: var(--warn); }
 .meta a { color: var(--sel); text-decoration: none; }
 .meta a:hover { text-decoration: underline; }
 .meta a:focus-visible { outline: 2px solid var(--sel); outline-offset: 1px; border-radius: 2px; }
