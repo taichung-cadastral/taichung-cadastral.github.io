@@ -52,8 +52,8 @@ h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
 .meta.notice { color: var(--warn); }
 .meta.notice a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .meta.notice .big-link {
-  font-size: 3em; font-weight: 700; line-height: 1.15; color: var(--cad);
-  text-underline-offset: 6px; text-decoration-thickness: 2px; margin: 0 4px; display: inline-block; max-width: 100%; white-space: nowrap;
+  font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--cad);
+  text-underline-offset: 3px; text-decoration-thickness: 1.5px; margin: 0 2px; white-space: nowrap;
 }
 .meta.notice .big-link:hover { color: var(--sel); }
 .meta a { color: var(--sel); text-decoration: none; }
