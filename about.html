@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>作者簡介｜臺中市地籍圖 DXF 下載</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M1.5 1.5h13v13h-13zM4 4h6v6H4z%27 fill=%27none%27 stroke=%27%23c23a2b%27 stroke-width=%271.6%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { height: auto; min-height: 100%; }
+  .about {
+    flex: 1; width: 100%; max-width: 760px; margin: 0 auto;
+    padding-block: 32px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .card-head { padding: 24px 28px 20px; border-bottom: 3px solid var(--cad); }
+  .card-head .label { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.18em; color: var(--muted); }
+  .card-head h2 { font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: 0.02em; }
+  .card-head h2 .en { font-family: var(--f-body); }
+  .card-head .role { margin: 6px 0 0; font-size: 16px; font-weight: 500; color: var(--ink); }
+  .card-body { padding: 8px 28px 24px; display: grid; gap: 0; }
+  .row { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 16px; padding-block: 16px; border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--cad); letter-spacing: 0.12em; padding-top: 1px; }
+  .row ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 15px; }
+  .row li { min-width: 0; overflow-wrap: anywhere; }
+  .row li .org { color: var(--ink); font-weight: 500; }
+  .row li .pos { color: var(--muted); }
+  .row li .pos::before { content: "｜"; margin: 0 2px; color: var(--line); }
+  .mailbox { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .mail {
+    font-family: var(--f-num); font-size: 16px; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; user-select: all; overflow-wrap: anywhere;
+  }
+  .copy { font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: 4px; padding: 6px 14px; background: var(--sel); color: var(--panel); border: 1px solid var(--sel); }
+  .copy:hover { filter: brightness(1.08); }
+  .copy:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+  .copied { font-size: 13px; color: var(--sel); min-height: 1.2em; }
+  .back { font-size: 13px; color: var(--sel); text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  @media (max-width: 560px) {
+    .card-head, .card-body { padding-left: 18px; padding-right: 18px; }
+    .row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div class="brand-text">
+      <h1>臺中市地籍圖 DXF 下載</h1>
+      <p class="meta">作者簡介</p>
+    </div>
+  </div>
+  <a class="back" href="index.html">回到地籍圖</a>
+</header>
+
+<main class="about">
+  <article class="card">
+    <div class="card-head">
+      <p class="label">簡介</p>
+      <h2><span class="en">Joe Zhao</span></h2>
+      <p class="role">都市計畫技師／景觀設計師</p>
+    </div>
+    <div class="card-body">
+      <section class="row">
+        <h3>經歷</h3>
+        <ul>
+          <li><span class="org">工程顧問公司</span><span class="pos">專案經理／景觀組組長</span></li>
+          <li><span class="org">聯合建築師事務所</span><span class="pos">BIM 經理</span></li>
+          <li><span class="org">高級中學建築科</span><span class="pos">業師</span></li>
+          <li><span class="org">數位模型資訊公司</span><span class="pos">技術總監</span></li>
+        </ul>
+      </section>
+      <section class="row">
+        <h3>學歷</h3>
+        <ul>
+          <li><span class="org">逢甲大學 建築專業學院</span><span class="pos">碩士</span></li>
+          <li><span class="org">朝陽科技大學 景觀與都市設計系</span><span class="pos">學士</span></li>
+        </ul>
+      </section>
+      <section class="row">
+        <h3>專長</h3>
+        <ul>
+          <li>景觀與建築設計</li>
+          <li>都市規劃與設計</li>
+          <li>UAV 攝影及數位應用</li>
+          <li>建築資訊模型 BIM</li>
+          <li>公共工程監造</li>
+        </ul>
+      </section>
+      <section class="row">
+        <h3>聯絡交流</h3>
+        <div>
+          <div class="mailbox">
+            <span class="mail" id="mail" data-u="look7789" data-d="yahoo.com.tw">look7789 [at] yahoo.com.tw</span>
+            <button type="button" class="copy" id="copyMail">複製 Email</button>
+          </div>
+          <p class="copied" id="copied" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+    </div>
+  </article>
+</main>
+
+<script>
+// Email 在載入後才組合，避免被垃圾信程式直接從原始碼抓取；畫面上可正常選取與複製
+(() => {
+  const el = document.getElementById('mail');
+  const addr = el.dataset.u + '@' + el.dataset.d;
+  el.textContent = addr;
+  const note = document.getElementById('copied');
+  const selectText = () => {
+    const r = document.createRange(); r.selectNodeContents(el);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  };
+  document.getElementById('copyMail').addEventListener('click', () => {
+    const done = () => { note.textContent = '已複製 ' + addr; };
+    const fail = () => { selectText(); note.textContent = '已選取 Email，請按 Ctrl+C 複製。'; };
+    try { navigator.clipboard.writeText(addr).then(done, fail); } catch (e) { fail(); }
+  });
+})();
+</script>
+</body>
+</html>
