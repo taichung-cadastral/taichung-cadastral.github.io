@@ -115,6 +115,20 @@ h2 { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.0
 .qform { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: 8px; align-items: center; }
 .qform label { font-size: 13px; color: var(--muted); }
 .qform .btn { grid-column: 2; }
+.qform .full { grid-column: 2; }
+.combo { position: relative; min-width: 0; }
+.combo-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: 1000; margin: 0; padding: 4px 0; list-style: none;
+  max-height: 280px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+.combo-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 10px; cursor: pointer; }
+.combo-list li small { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.combo-list li.active, .combo-list li:hover { background: var(--sel-soft); }
+.combo-list li mark { background: none; color: var(--sel); font-weight: 700; }
+.combo-list .empty { color: var(--muted); cursor: default; }
+.combo-list .empty:hover { background: none; }
+input[type="text"]#secq { font-family: var(--f-body); }
 select, input[type="text"] {
   width: 100%; min-width: 0; font: inherit; color: var(--ink); background: var(--paper);
   border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px;

@@ -51,8 +51,13 @@
     <section class="block">
       <h2>地號查詢</h2>
       <form id="qform" class="qform" autocomplete="off">
-        <label for="sec">地段</label>
-        <select id="sec" required><option value="">選擇地段…</option></select>
+        <label for="secq">地段</label>
+        <div class="combo">
+          <input id="secq" type="text" placeholder="輸入段名或段代碼，例：旱溪、0322" autocomplete="off"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="secList">
+          <ul id="secList" class="combo-list" role="listbox" aria-label="符合的地段" hidden></ul>
+        </div>
+        <select id="sec" class="full" required aria-label="或從選單選擇地段"><option value="">或從選單選擇地段…</option></select>
         <label for="lotq">地號</label>
         <input id="lotq" type="text" inputmode="text" placeholder="例：123、123-4、10~15、88-*">
         <button type="submit" class="btn" id="qbtn">加入選取</button>

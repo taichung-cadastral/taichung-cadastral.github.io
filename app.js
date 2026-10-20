@@ -525,7 +525,7 @@ function msg(t, cls = '') { const el = $('msg'); el.textContent = t; el.classNam
 $('qform').addEventListener('submit', async e => {
   e.preventDefault();
   const k = $('sec').value, q = $('lotq').value;
-  if (!k) return msg('請先選擇地段。', 'err');
+  if (!k) return msg('請先選擇地段：在「地段」欄輸入段名後，從清單點選。', 'err');
   const { want, bad } = parseQuery(q);
   if (!want.length) return msg(bad.length ? `看不懂的地號格式：${bad.join('、')}（範圍一次最多 50 號）` : '請輸入地號。', 'err');
   if (!Guard.hit('query')) return msg(BUSY, 'err');
@@ -560,7 +560,77 @@ $('qform').addEventListener('submit', async e => {
     if (map.getZoom() < LOT_ZOOM) map.setZoom(LOT_ZOOM, { animate: false });
   }
 });
-$('sec').addEventListener('change', e => { if (e.target.value) fitSection(e.target.value); });
+$('sec').addEventListener('change', e => {
+  const s0 = S.byKey[e.target.value];
+  $('secq').value = s0 ? s0.n : '';
+  if (s0) fitSection(s0.k);
+});
+
+// ---------- 地段：打字搜尋 ----------
+(() => {
+  const inp = $('secq'), list = $('secList');
+  let items = [], active = -1;
+  const norm = t => t.replace(/\s/g, '').replace(/台/g, '臺');
+  function search(q) {
+    q = norm(q);
+    if (!q) return [];
+    const hits = [];
+    for (const s0 of S.sections) {
+      const name = norm(s0.n), dist = DIST[s0.d] || '';
+      let score = -1;
+      if (s0.c === q || s0.c.replace(/^0+/, '') === q.replace(/^0+/, '')) score = 0;   // 段代碼完全相符
+      else if (name.startsWith(q)) score = 1;
+      else if (name.includes(q)) score = 2;
+      else if (s0.c.includes(q)) score = 3;
+      else if (dist.startsWith(q)) score = 4;                                            // 輸入行政區列出該區地段
+      if (score >= 0) hits.push([score, s0]);
+    }
+    hits.sort((a, b) => a[0] - b[0] || a[1].n.localeCompare(b[1].n, 'zh-Hant'));
+    return hits.slice(0, 30).map(h => h[1]);
+  }
+  const hl = (text, q) => { const i = q ? text.indexOf(q) : -1; return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(q) + '</mark>' + esc(text.slice(i + q.length)); };
+  function render() {
+    const q = norm(inp.value);
+    const cur = S.byKey[$('sec').value];
+    if (cur && norm(cur.n) !== q) $('sec').value = '';                  // 改打別的字就取消原本選的地段
+    items = search(inp.value);
+    active = items.length ? 0 : -1;
+    if (!q) { close(); return; }
+    list.innerHTML = items.length
+      ? items.map((s0, i) => `<li role="option" id="secopt${i}" data-k="${esc(s0.k)}" class="${i === active ? 'active' : ''}">` +
+          `<span>${hl(s0.n, q)}（${hl(s0.c, q)}）</span><small>${esc(DIST[s0.d] || '')} · ${s0.cnt} 筆</small></li>`).join('')
+      : '<li class="empty">找不到符合的地段</li>';
+    list.hidden = false; inp.setAttribute('aria-expanded', 'true');
+    inp.setAttribute('aria-activedescendant', active >= 0 ? 'secopt' + active : '');
+  }
+  function close() { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); }
+  function move(d) {
+    if (!items.length) return;
+    active = (active + d + items.length) % items.length;
+    list.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === active));
+    const li = list.children[active]; if (li) li.scrollIntoView({ block: 'nearest' });
+    inp.setAttribute('aria-activedescendant', 'secopt' + active);
+  }
+  function pick(k) {
+    const s0 = S.byKey[k]; if (!s0) return;
+    $('sec').value = k;
+    $('sec').dispatchEvent(new Event('change'));
+    inp.value = s0.n;
+    close();
+    $('lotq').focus();
+  }
+  inp.addEventListener('input', render);
+  inp.addEventListener('focus', () => { if (inp.value && norm(inp.value) !== norm(S.byKey[$('sec').value]?.n || '')) render(); });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) render(); else move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && active >= 0) pick(items[active].k); else if (items.length === 1) pick(items[0].k); }
+    else if (e.key === 'Escape') close();
+  });
+  list.addEventListener('mousedown', e => e.preventDefault());          // 避免點選前輸入框先失焦
+  list.addEventListener('click', e => { const li = e.target.closest('li[data-k]'); if (li) pick(li.dataset.k); });
+  inp.addEventListener('blur', () => setTimeout(close, 100));
+})();
 
 // ---------- 下載 ----------
 function save(name, text, type) {
