@@ -1,0 +1,172 @@
+/* 版面：左側全幅地圖、右側固定寬工具欄；手機改為上下堆疊。
+   配色取自地籍圖慣例：紙面白、地籍紅線，選取用藍色區隔。 */
+:root {
+  --paper: #f4f6f5;
+  --panel: #ffffff;
+  --ink: #1b2220;
+  --muted: #5a6662;
+  --line: #d5dbd8;
+  --cad: #c23a2b;        /* 地籍界線紅 */
+  --sel: #1d6bb0;        /* 選取 */
+  --sel-soft: #e3eef8;
+  --warn: #9a5b00;
+  --f-body: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --panel-w: 368px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111514; --panel: #171c1b; --ink: #e4eae7; --muted: #98a49f; --line: #2a3331;
+    --cad: #ff6f5e; --sel: #62b1ff; --sel-soft: #17293a; --warn: #f0b45c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111514; --panel: #171c1b; --ink: #e4eae7; --muted: #98a49f; --line: #2a3331;
+  --cad: #ff6f5e; --sel: #62b1ff; --sel-soft: #17293a; --warn: #f0b45c; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 14px/1.55 var(--f-body);
+  display: flex; flex-direction: column;
+}
+h1, h2 { margin: 0; text-wrap: balance; }
+code { font-family: var(--f-num); font-size: 0.92em; background: var(--sel-soft); padding: 0 4px; border-radius: 3px; }
+
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.mark { width: 18px; height: 18px; border: 2px solid var(--cad); position: relative; flex: none; }
+.mark::after { content: ""; position: absolute; inset: 3px 6px 6px 3px; border-right: 2px solid var(--cad); border-bottom: 2px solid var(--cad); }
+h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.chip-demo { color: var(--warn); border-color: currentColor; }
+
+.app { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); }
+.mapwrap { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; background: var(--paper); }
+.status {
+  position: absolute; left: 10px; bottom: 22px; z-index: 500; max-width: calc(100% - 20px);
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+  padding: 4px 10px; font-size: 13px; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  min-width: 0; min-height: 0; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line);
+  display: flex; flex-direction: column;
+}
+.block { padding: 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.block.grow { flex: 1 0 auto; }
+h2 { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
+
+.layerblock { padding-block: 14px; }
+.bigtoggle {
+  display: flex; align-items: center; gap: 14px; cursor: pointer; user-select: none;
+  padding: 14px 16px; border: 2px solid var(--line); border-radius: 8px; background: var(--paper);
+}
+.bigtoggle:hover { border-color: var(--cad); }
+.bigtoggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.bigtoggle .sw {
+  flex: none; position: relative; width: 56px; height: 30px; border-radius: 999px;
+  background: var(--line); transition: background .15s;
+}
+.bigtoggle .sw::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--panel); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s;
+}
+.bigtoggle .bt-text { font-size: 20px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink); }
+.bigtoggle input:checked ~ .sw { background: var(--cad); }
+.bigtoggle input:checked ~ .sw::after { transform: translateX(26px); }
+.bigtoggle:has(input:checked) { border-color: var(--cad); }
+.bigtoggle:has(input:focus-visible) { outline: 2px solid var(--sel); outline-offset: 2px; }
+.layerblock { gap: 10px; }
+.bigtoggle.small { padding: 10px 16px; }
+.bigtoggle.small .bt-text { font-size: 16px; }
+.bigtoggle.small .sw { width: 46px; height: 26px; }
+.bigtoggle.small .sw::after { width: 20px; height: 20px; }
+.bigtoggle.small input:checked ~ .sw::after { transform: translateX(20px); }
+
+.legend {
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 10px; font-size: 12px; line-height: 1.5; display: grid; gap: 2px; max-width: 200px;
+}
+.legend b { font-size: 12.5px; margin-bottom: 2px; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 10px; border-radius: 2px; flex: none; opacity: 0.85; }
+.legend i.none { background: none; border: 1px dashed var(--muted); }
+.legend small { color: var(--muted); margin-top: 4px; }
+
+.qform { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: 8px; align-items: center; }
+.qform label { font-size: 13px; color: var(--muted); }
+.qform .btn { grid-column: 2; }
+select, input[type="text"] {
+  width: 100%; min-width: 0; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px;
+}
+input[type="text"] { font-family: var(--f-num); }
+select:focus-visible, input:focus-visible, .btn:focus-visible, .link:focus-visible, .x:focus-visible {
+  outline: 2px solid var(--sel); outline-offset: 1px;
+}
+.btn {
+  font: inherit; font-weight: 500; cursor: pointer; border-radius: 4px; padding: 8px 12px;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+}
+.btn:hover:not(:disabled) { border-color: var(--sel); color: var(--sel); }
+.btn.primary { background: var(--sel); border-color: var(--sel); color: var(--panel); }
+.btn.primary:hover:not(:disabled) { color: var(--panel); filter: brightness(1.08); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.link { font: inherit; font-size: 13px; background: none; border: 0; color: var(--sel); cursor: pointer; padding: 2px 4px; }
+.link:disabled { color: var(--muted); opacity: 0.5; cursor: default; }
+.hint { margin: 0; font-size: 12.5px; color: var(--muted); }
+.msg { margin: 0; font-size: 13px; min-height: 1.2em; }
+.msg.err { color: var(--cad); }
+.msg.ok { color: var(--sel); }
+
+.selhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.count { font-family: var(--f-num); color: var(--sel); font-weight: 500; margin-left: 4px; }
+.sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sum b { color: var(--ink); font-family: var(--f-num); font-weight: 500; }
+.sellist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sellist li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center;
+  padding: 6px 0; border-top: 1px dashed var(--line); font-variant-numeric: tabular-nums;
+}
+.sellist .nm { min-width: 0; overflow-wrap: anywhere; cursor: pointer; }
+.sellist .nm:hover { color: var(--sel); }
+.sellist .no { font-family: var(--f-num); }
+.sellist .ar { font-family: var(--f-num); font-size: 12.5px; color: var(--muted); text-align: right; }
+.sellist .zn { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-top: -2px; }
+.x { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 3px; }
+.x:hover { color: var(--cad); background: var(--sel-soft); }
+
+.dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dl .hint { grid-column: 1 / -1; }
+.src { padding: 14px 16px 18px; font-size: 12px; color: var(--muted); }
+
+/* 地圖上的標籤 */
+.lotno {
+  font: 500 11px/1 var(--f-num); color: var(--cad); white-space: nowrap; text-align: center;
+  text-shadow: 0 0 2px var(--paper), 0 0 2px var(--paper), 0 0 3px var(--paper);
+  pointer-events: none;
+}
+.lotno.on { color: var(--sel); font-weight: 700; }
+.leaflet-container { font-family: var(--f-body); }
+.leaflet-control-layers, .leaflet-bar a { background: var(--panel); color: var(--ink); }
+
+@media (max-width: 760px) {
+  body { height: auto; min-height: 100%; }
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .mapwrap { height: 56vh; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .block, .src { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

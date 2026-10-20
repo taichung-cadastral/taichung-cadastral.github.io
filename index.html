@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>臺中市地籍圖 DXF 下載</title>
+<meta name="description" content="以地號或地圖點選臺中市宗地，下載 TWD97 坐標的 DXF 地籍圖。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M1.5 1.5h13v13h-13zM4 4h6v6H4z%27 fill=%27none%27 stroke=%27%23c23a2b%27 stroke-width=%271.6%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <h1>臺中市地籍圖 DXF 下載</h1>
+  </div>
+  <div class="chips">
+    <span class="chip" id="verChip">地籍資料 115.05.07</span>
+    <span class="chip chip-demo" id="scopeChip">範圍：舊臺中市＋太平區</span>
+  </div>
+</header>
+
+<main class="app">
+  <div class="mapwrap">
+    <div id="map" aria-label="地籍地圖"></div>
+    <div class="status" id="status">載入地段資料…</div>
+  </div>
+
+  <aside class="panel">
+    <section class="block layerblock">
+      <label class="bigtoggle" for="layerOn">
+        <input type="checkbox" id="layerOn">
+        <span class="sw" aria-hidden="true"></span>
+        <span class="bt-text">開啟地籍圖圖層</span>
+      </label>
+      <label class="bigtoggle small" for="zoneOn">
+        <input type="checkbox" id="zoneOn">
+        <span class="sw" aria-hidden="true"></span>
+        <span class="bt-text">開啟使用分區圖層</span>
+      </label>
+    </section>
+
+    <section class="block">
+      <h2>地號查詢</h2>
+      <form id="qform" class="qform" autocomplete="off">
+        <label for="sec">地段</label>
+        <select id="sec" required><option value="">選擇地段…</option></select>
+        <label for="lotq">地號</label>
+        <input id="lotq" type="text" inputmode="text" placeholder="例：123、123-4、10~15、88-*">
+        <button type="submit" class="btn" id="qbtn">加入選取</button>
+      </form>
+      <p class="hint">多筆以逗號或空白分隔。<code>10~15</code> 為 10 到 15 地號（不含子號），<code>88-*</code> 為 88 地號含所有子號。也可以把地圖放大後直接點宗地。</p>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="block grow">
+      <div class="selhead">
+        <h2>已選宗地 <span class="count" id="selCount">0</span></h2>
+        <div class="selbtns">
+          <button type="button" class="link" id="zoomSel" disabled>縮放至選取</button>
+          <button type="button" class="link" id="clearSel" disabled>清除</button>
+        </div>
+      </div>
+      <div class="sum" id="selSum">尚未選取。在地圖上點宗地或用地號查詢加入。</div>
+      <ol class="sellist" id="selList"></ol>
+      <p class="hint" id="zoneHint" hidden>使用分區由地籍圖與臺中市都市計畫圖（114 年版）套疊推估；非都市土地依地籍登記。僅供參考，正式分區以都市發展局核發之分區證明為準。</p>
+    </section>
+
+    <section class="block dl">
+      <button type="button" class="btn primary" id="dlDxf" disabled>下載 DXF</button>
+      <button type="button" class="btn" id="dlCsv" disabled>下載清單 CSV</button>
+      <p class="hint">一次最多 10 筆，限同一行政區。DXF 為 AutoCAD 2010 格式，坐標 TWD97 TM2（EPSG:3826），單位公尺。</p>
+    </section>
+
+    <footer class="src">
+      資料來源：政府資料開放平台，依政府資料開放授權條款第 1 版利用，圖資僅供參考。
+    </footer>
+  </aside>
+</main>
+
+<script src="lib/leaflet.js"></script>
+<script src="lib/proj4.js"></script>
+<script src="lib/polygon-clipping.umd.min.js"></script>
+<script src="dxf-template.js"></script>
+<script src="dxf.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

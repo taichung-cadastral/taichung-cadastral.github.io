@@ -1,0 +1,7 @@
+.git
+.github
+cloudflare
+wrangler.jsonc
+README.md
+*.py
+node_modules
