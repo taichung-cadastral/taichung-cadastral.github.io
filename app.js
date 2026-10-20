@@ -44,7 +44,8 @@ const lotLabel = no8 => { const m = +no8.slice(0, 4), s = +no8.slice(4); return 
 const MAX_SEL = 10;
 const COOL_MS = 120e3;
 const RULES = {
-  dl:    { win: 120e3, max: 5,  burstMs: 3000, label: '下載' },      // 2 分鐘內最多 5 次；3 秒內連續下載視為異常
+  dl:    { win: 120e3, max: 5,  burstMs: 3000, label: 'DXF 下載' },  // 2 分鐘內最多 5 次；3 秒內連按視為異常
+  csv:   { win: 120e3, max: 8,  burstMs: 1500, label: 'CSV 下載' },  // CSV 另外計算，下載 DXF 後可馬上下載 CSV
   query: { win: 60e3,  max: 20, burstMs: 400,  label: '地號查詢' },  // 1 分鐘內最多 20 次
   data:  { win: 120e3, max: 60, burstMs: 0,    label: '地段資料載入' }, // 2 分鐘內最多載入 60 個地段檔
 };
@@ -577,30 +578,31 @@ function baseName() {
   return name.replace(/[\\/:*?"<>|]/g, '_');
 }
 // 下載前再檢查一次規則（避免有人改動頁面狀態繞過）
-function checkDownload() {
+function checkDownload(kind) {
   const lots = [...S.sel.values()];
   if (automated) return '偵測到自動化瀏覽器，本站不提供自動下載。';
   if (!lots.length) return '尚未選取宗地。';
   if (lots.length > MAX_SEL) return `一次最多下載 ${MAX_SEL} 筆。`;
   if (new Set(lots.map(l => l.d)).size > 1) return '不能跨區下載，請只保留同一行政區的宗地。';
-  if (!Guard.hit('dl')) return BUSY;
+  if (!Guard.hit(kind)) return BUSY;
   return '';
 }
 function updateDlButtons() {
   const off = !S.sel.size;
   $('dlDxf').disabled = off; $('dlCsv').disabled = off;
 }
+function dlmsg(t, cls = '') { const el = $('dlmsg'); el.textContent = t; el.className = 'msg dlmsg ' + cls; }
 $('dlDxf').addEventListener('click', async () => {
-  const why = checkDownload(); if (why) return msg(why, 'err');
+  const why = checkDownload('dl'); if (why) return dlmsg(why, 'err');
   const sel = [...S.sel.values()];
   let pieces = [];
-  try { msg('整理使用分區…'); pieces = await piecesForLots(sel); } catch (e) { msg('使用分區載入失敗，DXF 只含宗地。', 'err'); }
+  try { dlmsg('整理使用分區…'); pieces = await piecesForLots(sel); } catch (e) { dlmsg('使用分區載入失敗，DXF 只含宗地。', 'err'); }
   const lots = sel.map(l => ({ sec: l.sec, no: l.label, rings: l.rings, lx: l.lx, ly: l.ly, zlabel: zoneLabel(l) }));
   save(baseName() + '_地籍圖.dxf', buildDXF(lots, window.DXF_TPL, window.DXF_OWNER, pieces, lotTable(sel)), 'application/dxf');
-  msg(`已產生 DXF：宗地 ${lots.length} 筆${pieces.length ? `，分區色塊 ${pieces.length} 塊` : ''}。`, 'ok');
+  dlmsg(`已下載 DXF：宗地 ${lots.length} 筆${pieces.length ? `，分區色塊 ${pieces.length} 塊` : ''}。`, 'ok');
 });
 $('dlCsv').addEventListener('click', () => {
-  const why = checkDownload(); if (why) return msg(why, 'err');
+  const why = checkDownload('csv'); if (why) return dlmsg(why, 'err');
   const rows = [['行政區', '地段', '段代碼', '地號', '登記面積(m2)', '登記面積(坪)', '都市計畫使用分區(含比例)', '主要分區建蔽率(%)', '主要分區容積率(%)', '都市計畫區', '非都市使用分區', '非都市使用地類別', 'TWD97_E', 'TWD97_N']];
   for (const l of [...S.sel.values()].sort((a, b) => a.sec.localeCompare(b.sec, 'zh-Hant') || a.no8.localeCompare(b.no8)))
   {
@@ -610,6 +612,7 @@ $('dlCsv').addEventListener('click', () => {
       zi.kind === 'nonurban' ? zi.zone : '', zi.kind === 'nonurban' ? zi.use : '', l.lx.toFixed(3), l.ly.toFixed(3)]);
   }
   save(baseName() + '_清單.csv', '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'), 'text/csv');
+  dlmsg(`已下載清單 CSV（${S.sel.size} 筆）。`, 'ok');
 });
 
 // 主題切換時重新套用地圖顏色
