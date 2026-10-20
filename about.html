@@ -32,15 +32,6 @@
   .row li .org { color: var(--ink); font-weight: 500; }
   .row li .pos { color: var(--muted); }
   .row li .pos::before { content: "｜"; margin: 0 2px; color: var(--line); }
-  .mailbox { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-  .mail {
-    font-family: var(--f-num); font-size: 16px; color: var(--ink); background: var(--paper);
-    border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; user-select: all; overflow-wrap: anywhere;
-  }
-  .copy { font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: 4px; padding: 6px 14px; background: var(--sel); color: var(--panel); border: 1px solid var(--sel); }
-  .copy:hover { filter: brightness(1.08); }
-  .copy:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
-  .copied { font-size: 13px; color: var(--sel); min-height: 1.2em; }
   .back { font-size: 13px; color: var(--sel); text-decoration: none; }
   .back:hover { text-decoration: underline; }
   @media (max-width: 560px) {
@@ -90,6 +81,7 @@
         <ul>
           <li>景觀與建築設計</li>
           <li>都市規劃與設計</li>
+          <li>土地評估及變更</li>
           <li>UAV 攝影及數位應用</li>
           <li>建築資訊模型 BIM</li>
           <li>公共工程監造</li>
@@ -97,35 +89,13 @@
       </section>
       <section class="row">
         <h3>聯絡交流</h3>
-        <div>
-          <div class="mailbox">
-            <span class="mail" id="mail" data-u="look7789" data-d="yahoo.com.tw">look7789 [at] yahoo.com.tw</span>
-            <button type="button" class="copy" id="copyMail">複製 Email</button>
-          </div>
-          <p class="copied" id="copied" role="status" aria-live="polite"></p>
-        </div>
+        <ul>
+          <li>look7789@yahoo.com.tw</li>
+        </ul>
       </section>
     </div>
   </article>
 </main>
 
-<script>
-// Email 在載入後才組合，避免被垃圾信程式直接從原始碼抓取；畫面上可正常選取與複製
-(() => {
-  const el = document.getElementById('mail');
-  const addr = el.dataset.u + '@' + el.dataset.d;
-  el.textContent = addr;
-  const note = document.getElementById('copied');
-  const selectText = () => {
-    const r = document.createRange(); r.selectNodeContents(el);
-    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-  };
-  document.getElementById('copyMail').addEventListener('click', () => {
-    const done = () => { note.textContent = '已複製 ' + addr; };
-    const fail = () => { selectText(); note.textContent = '已選取 Email，請按 Ctrl+C 複製。'; };
-    try { navigator.clipboard.writeText(addr).then(done, fail); } catch (e) { fail(); }
-  });
-})();
-</script>
 </body>
 </html>
