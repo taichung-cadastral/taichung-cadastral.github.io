@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="style.css?v=20261020d">
+<link rel="stylesheet" href="style.css?v=20261020f">
 <style>
   body { height: auto; min-height: 100%; }
   .about {
@@ -76,6 +76,11 @@
       <section class="ver">
         <time datetime="2026-10-20">115.10.20</time>
         <ul>
+          <li><span class="tag new">新增</span><b>框選</b>：切到「框選」後在地圖上拖曳畫框，碰到方框的宗地都會加入，最多 50 筆，超過會跳出警告；單筆點選模式按住 Shift 拖曳也可框選。</li>
+          <li><span class="tag new">新增</span><b>上傳 KML／KMZ 圈選</b>：選取範圍內的宗地，最多 100 筆，超過會跳出警告；範圍不在本站資料區時顯示「無地籍資料」。檔案只在瀏覽器內讀取，不會上傳。</li>
+          <li><span class="tag imp">改善</span>下載的 DXF 開啟時，畫面直接置中在地籍圖上，不會停在原點顯示空白。</li>
+          <li><span class="tag imp">改善</span>地圖畫面縮為 70% 置中，載入更快。</li>
+          <li><span class="tag fix">修正</span>開啟地籍圖層後，偶爾點不到宗地的問題。</li>
           <li><span class="tag new">新增</span><b>潭子區</b>地籍：49 個地段、55,163 筆宗地，含豐潭雅神地區都市計畫使用分區；非都市土地依地籍登記之使用分區及使用地類別。</li>
           <li><span class="tag imp">改善</span>「地段」欄可直接輸入段名、段代碼或行政區搜尋，同名地段會標示所在行政區。</li>
           <li><span class="tag fix">修正</span>下載 DXF 與下載清單 CSV 分開計算次數，下載結果顯示在按鈕下方。</li>

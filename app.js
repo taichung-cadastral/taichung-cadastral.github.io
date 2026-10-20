@@ -41,9 +41,13 @@ const lotLabel = no8 => { const m = +no8.slice(0, 4), s = +no8.slice(4); return 
 // 每次最多 MAX_SEL 筆、只能同一行政區。短時間大量操作則冷卻 COOL_MS。
 // 注意：這一層在使用者的瀏覽器執行，只擋一般使用與簡單的自動點擊；
 // 伺服器端的限制見 cloudflare/worker.js。
-const MAX_SEL = 10;
+// 單筆點選／地號查詢最多 10 筆；框選最多 50 筆；KML／KMZ 圈選最多 100 筆。
+// 目前上限 S.cap 依用過的選取方式提高，清除選取後回到 10 筆。
+const LIMIT = { click: 10, box: 50, kml: 100 };
+const MAX_SEL = LIMIT.kml;   // 絕對上限
 const COOL_MS = 120e3;
 const RULES = {
+  kml:   { win: 120e3, max: 5,  burstMs: 3000, label: 'KML 圈選' },  // 2 分鐘內最多上傳 5 次
   dl:    { win: 120e3, max: 5,  burstMs: 3000, label: 'DXF 下載' },  // 2 分鐘內最多 5 次；3 秒內連按視為異常
   csv:   { win: 120e3, max: 8,  burstMs: 1500, label: 'CSV 下載' },  // CSV 另外計算，下載 DXF 後可馬上下載 CSV
   query: { win: 60e3,  max: 20, burstMs: 400,  label: '地號查詢' },  // 1 分鐘內最多 20 次
@@ -116,7 +120,7 @@ function loadDataScript(path) {
   });
 }
 
-const S = { sections: [], byKey: {}, loaded: {}, loading: {}, lots: new Map(), sel: new Map(), layerOn: false, shapes: null, zoneOn: false, attrs: null, zones: {}, zoneLoading: {}, zonePolys: {} };
+const S = { cap: LIMIT.click, sections: [], byKey: {}, loaded: {}, loading: {}, lots: new Map(), sel: new Map(), layerOn: false, shapes: null, zoneOn: false, attrs: null, zones: {}, zoneLoading: {}, zonePolys: {} };
 
 // ---------- 地圖 ----------
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -142,6 +146,7 @@ const zoneGroup = L.layerGroup();
 const secGroup = L.layerGroup();
 const lotGroup = L.layerGroup();
 const labelGroup = L.layerGroup();
+const kmlGroup = L.layerGroup().addTo(map);   // 上傳的 KML／KMZ 範圍外框
 
 const lotStyle = on => on
   ? { renderer, color: C.sel, weight: 2.2, fillColor: C.sel, fillOpacity: 0.32 }
@@ -294,6 +299,8 @@ async function init() {
   }
   if (all.isValid()) map.fitBounds(all, { padding: [20, 20] });
   map.on('moveend zoomend', refresh);
+  // 放大到可點宗地的級數後，地段外框不再接受點擊（canvas 依 options.interactive 判斷）
+  map.on('zoomend', () => { const on = map.getZoom() < LOT_ZOOM; for (const s of S.sections) if (s.poly) s.poly.options.interactive = on; });
   refresh();
 }
 
@@ -313,7 +320,8 @@ async function setLayer(on) {
     for (const s of S.sections) {
       const rings = (S.shapes[s.k] || []).map(r => r.map(([x, y]) => ll(x, y)));
       if (!rings.length) continue;
-      const pg = L.polygon(rings, secStyle()).addTo(secGroup);
+      const pg = L.polygon(rings, { ...secStyle(), interactive: map.getZoom() < LOT_ZOOM }).addTo(secGroup);
+      pg.bringToBack();                       // 地段外框永遠在宗地底下，避免蓋住宗地的點選
       pg.on('click', e => { if (map.getZoom() < LOT_ZOOM) { $('sec').value = s.k; fitSection(s.k); L.DomEvent.stop(e); } });
       pg.on('mouseover', () => { if (map.getZoom() < LOT_ZOOM) status(`${DIST[s.d] || ''} ${s.n}（${s.c}）· ${s.cnt} 筆宗地 · 點一下放大`); });
       s.poly = pg;
@@ -389,7 +397,7 @@ function loadSection(k) {
       const id = `${k}|${L0.no8}`;
       const lot = { id, k, sec: s.n, d: s.d, ...L0, label: lotLabel(L0.no8) };
       lot.layer = L.polygon(lot.rings.map(r => r.map(([x, y]) => ll(x, y))), lotStyle(S.sel.has(id)));
-      lot.layer.on('click', e => { toggle(id); L.DomEvent.stop(e); });
+      lot.layer.on('click', e => { L.DomEvent.stop(e); if (Box.justDrew()) return; toggle(id); });
       lot.layer.on('mouseover', () => status(`${s.n} ${lot.label} 地號 · ${fmt(lot.area)} m²（${fmt(lot.area * PING)} 坪）· ${zoneInfo(lot).short}`));
       lot.layer.addTo(lotGroup);
       S.lots.set(id, lot);
@@ -453,7 +461,9 @@ function canAdd(lot) {
   if (S.sel.has(lot.id)) return '';
   const d = selDist();
   if (d && d !== lot.d) return `不能跨區下載：目前已選 ${DIST[d]} 的宗地，這筆在 ${DIST[lot.d]}。請先清除選取再選其他區。`;
-  if (S.sel.size >= MAX_SEL) return `一次最多選 ${MAX_SEL} 筆。請先下載或移除部分宗地。`;
+  if (S.sel.size >= S.cap) return S.cap === LIMIT.click
+    ? `單筆點選最多 ${S.cap} 筆。要選更多請用「框選」（50 筆）或上傳 KML／KMZ（100 筆）。`
+    : `目前最多 ${S.cap} 筆。請先下載或移除部分宗地。`;
   return '';
 }
 
@@ -474,10 +484,11 @@ function toggle(id, force, quiet) {
 function renderSel() {
   const lots = [...S.sel.values()].sort((a, b) => a.sec.localeCompare(b.sec, 'zh-Hant') || a.no8.localeCompare(b.no8));
   const n = lots.length, area = lots.reduce((t, l) => t + l.area, 0);
-  $('selCount').textContent = `${n} / ${MAX_SEL}`;
+  if (!n) S.cap = LIMIT.click;
+  $('selCount').textContent = `${n} / ${S.cap}`;
   $('selSum').innerHTML = n
     ? `${esc(DIST[lots[0].d] || '')}，共 <b>${n}</b> 筆，登記面積合計 <b>${fmt(area)}</b> m²（<b>${fmt(area * PING)}</b> 坪）`
-    : `尚未選取。在地圖上點宗地或用地號查詢加入，一次最多 ${MAX_SEL} 筆、限同一行政區。`;
+    : '尚未選取。在地圖上點宗地、框選、上傳 KML／KMZ 或用地號查詢加入，限同一行政區。';
   $('selList').innerHTML = lots.map(l =>
     `<li data-id="${esc(l.id)}"><span class="nm">${esc(l.sec)} <span class="no">${esc(l.label)}</span></span>` +
     `<span class="ar">${fmt(l.area)} m²</span>` +
@@ -495,7 +506,12 @@ $('selList').addEventListener('click', e => {
   if (e.target.closest('.x')) toggle(li.dataset.id, false);
   else if (lot) map.fitBounds(lot.layer.getBounds(), { maxZoom: 20, padding: [40, 40] });
 });
-$('clearSel').addEventListener('click', () => { for (const id of [...S.sel.keys()]) toggle(id, false); msg(''); });
+$('clearSel').addEventListener('click', () => {
+  for (const id of [...S.sel.keys()]) toggle(id, false);
+  S.cap = LIMIT.click; renderSel();
+  kmlGroup.clearLayers();
+  msg(''); smsg('');
+});
 $('zoomSel').addEventListener('click', zoomSel);
 function zoomSel() {
   const b = L.latLngBounds([]); for (const l of S.sel.values()) b.extend(l.layer.getBounds());
@@ -632,6 +648,247 @@ $('sec').addEventListener('change', e => {
   inp.addEventListener('blur', () => setTimeout(close, 100));
 })();
 
+// ---------- 範圍選取：框選、KML／KMZ ----------
+// 跳出警告視窗
+function warn(title, text) {
+  const d = $('warnDlg');
+  $('warnTitle').textContent = title; $('warnText').textContent = text;
+  if (d.showModal) { if (!d.open) d.showModal(); $('warnOk').focus(); } else alert(title + '\n' + text);
+}
+$('warnOk').addEventListener('click', () => $('warnDlg').close());
+$('warnDlg').addEventListener('click', e => { if (e.target === $('warnDlg')) $('warnDlg').close(); });
+function smsg(t, cls = '') { const el = $('smsg'); el.textContent = t; el.className = 'msg ' + cls; }
+const mpArea = mp => mp.reduce((t, poly) => t + ringArea(openRing(poly[0])) - poly.slice(1).reduce((u, r) => u + ringArea(openRing(r)), 0), 0);
+const mpBox = mp => mp.flatMap(p => p.map(bbox)).reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]);
+const lotBox = l => l.bb || (l.bb = l.rings.map(bbox).reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]));
+const scopeText = () => $('scopeChip').textContent.replace(/^範圍：/, '');
+const OUTSIDE = () => `無地籍資料：此範圍非屬本網站供應資料。本站目前提供：${scopeText()}。`;
+
+// 找出範圍（TWD97 MultiPolygon，polygon-clipping 格式）內的宗地。
+// minRatio：宗地面積落在範圍內的比例達到這個值才算（框選 0＝碰到就算；KML 5%，略過手繪邊界的細小重疊）
+async function lotsInArea(mp, minRatio, { checkOutside = false, maxSections = 30 } = {}) {
+  if (!S.layerOn) await setLayer(true);
+  if (!S.shapes) throw new Error('地段範圍載入失敗，請稍後再試。');
+  const pb = mpBox(mp);
+  const secs = [], shapes = [];
+  for (const s of S.sections) {
+    if (!s.b || !hit(s.b, pb)) continue;
+    const rings = (S.shapes[s.k] || []).map(r => [closeRing(r)]);
+    let inter = [];
+    try { inter = polygonClipping.intersection(mp, rings); } catch {}
+    if (inter.length && mpArea(inter) > 0.01) { secs.push(s); shapes.push(...rings); }
+  }
+  if (!secs.length) return { outside: true, lots: [], edge: 0 };
+  if (secs.length > maxSections) return { tooBig: secs.length, lots: [], edge: 0 };
+  const need = secs.filter(s => !S.loaded[s.k]);
+  if (need.length) smsg(`載入 ${need.map(s => s.n).join('、')}…`);
+  await Promise.all(secs.map(s => loadSection(s.k)));
+  const keys = new Set(secs.map(s => s.k));
+  const lots = [];
+  let edge = 0;
+  for (const l of S.lots.values()) {
+    if (!keys.has(l.k) || !hit(lotBox(l), pb)) continue;
+    let inter;
+    try { inter = polygonClipping.intersection(l.rings.map(r => [closeRing(r)]), mp); } catch { continue; }
+    if (!inter.length) continue;
+    const a = mpArea(inter), r = a / (l.rings.reduce((t, x) => t + ringArea(x), 0) || 1);   // 用圖形面積計算比例
+    if (minRatio <= 0 ? a > 0 : r >= minRatio) lots.push(l); else if (a > 0.5) edge++;
+  }
+  let partOutside = false;
+  if (checkOutside) {
+    try {
+      const rest = polygonClipping.difference(mp, ...shapes);
+      partOutside = mpArea(rest) > Math.max(1, mpArea(mp) * 0.01);
+    } catch {}
+  }
+  return { lots, edge, partOutside };
+}
+
+// 把找到的宗地加入選取（replace：先清除原選取，KML 用）
+function addArea(found, { limit, replace, what }) {
+  const base = replace ? [] : [...S.sel.values()];
+  const all = new Map(base.map(l => [l.id, l]));
+  const fresh = found.filter(l => !all.has(l.id));
+  for (const l of fresh) all.set(l.id, l);
+  const byD = {};
+  for (const l of all.values()) byD[l.d] = (byD[l.d] || 0) + 1;
+  if (all.size > limit) {
+    return { over: true, err: replace
+      ? `${what}範圍內有 ${found.length} 筆宗地，超過上限 ${limit} 筆，請縮小範圍。`
+      : `${what}到 ${fresh.length} 筆${base.length ? `，加上已選共 ${all.size} 筆` : ''}，超過上限 ${limit} 筆，請縮小${what}範圍。` };
+  }
+  if (Object.keys(byD).length > 1) {
+    return { err: `${what}範圍跨越 ${Object.entries(byD).map(([d, n]) => `${DIST[d] || d} ${n} 筆`).join('、')}。本站不提供跨區下載，請調整範圍只含同一行政區${replace ? '' : '，或先清除選取'}。` };
+  }
+  if (replace) for (const id of [...S.sel.keys()]) toggle(id, false);
+  S.cap = Math.max(S.cap, limit);
+  for (const l of fresh) toggle(l.id, true, true);
+  renderSel();
+  return { added: fresh.length, total: all.size };
+}
+
+// 框選：「框選」模式下在地圖上拖曳畫框；單筆點選模式下按住 Shift 拖曳也可以
+const Box = (() => {
+  const el = map.getContainer();
+  let mode = 'click', start = null, rect = null, drew = 0;
+  map.boxZoom.disable();
+  const HINT = {
+    click: `單筆點選：在地圖上點宗地加入或移除，最多 ${LIMIT.click} 筆。按住 Shift 拖曳也可以框選。`,
+    box: `框選：在地圖上拖曳畫出方框，碰到方框的宗地都會加入選取，最多 ${LIMIT.box} 筆。框選時地圖不能拖動，要移動地圖請切回「單筆點選」，或用滑鼠滾輪縮放。`,
+  };
+  function setMode(m) {
+    mode = m;
+    $('modeClick').classList.toggle('on', m === 'click'); $('modeClick').setAttribute('aria-pressed', m === 'click');
+    $('modeBox').classList.toggle('on', m === 'box'); $('modeBox').setAttribute('aria-pressed', m === 'box');
+    el.classList.toggle('boxmode', m === 'box');
+    if (m === 'box') map.dragging.disable(); else map.dragging.enable();
+    $('modeHint').textContent = HINT[m];
+    if (m === 'box') {
+      if (!S.layerOn) setLayer(true);
+      smsg(map.getZoom() < LOT_ZOOM ? `請先放大到第 ${LOT_ZOOM} 級以上（看得到宗地）再框選。` : '');
+    } else smsg('');
+  }
+  map.on('zoomend', () => { if (mode === 'box' && map.getZoom() >= LOT_ZOOM && $('smsg').textContent.startsWith('請先放大')) smsg(''); });
+  $('modeClick').addEventListener('click', () => setMode('click'));
+  $('modeBox').addEventListener('click', () => setMode('box'));
+
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || (mode !== 'box' && !e.shiftKey)) return;
+    if (e.target.closest('.leaflet-control')) return;
+    if (map.getZoom() < LOT_ZOOM) { smsg(`請先放大到第 ${LOT_ZOOM} 級以上（看得到宗地）再框選。`, 'err'); return; }
+    if (mode !== 'box') map.dragging.disable();
+    start = map.mouseEventToContainerPoint(e);
+    e.preventDefault();               // 避免拖曳時選到文字
+  });
+  document.addEventListener('pointermove', e => {
+    if (!start) return;
+    const p = map.mouseEventToContainerPoint(e);
+    const b = L.latLngBounds(map.containerPointToLatLng(start), map.containerPointToLatLng(p));
+    if (!rect) rect = L.rectangle(b, { interactive: false, className: 'boxrect', color: C.sel, weight: 1.5, dashArray: '5 4', fillColor: C.sel, fillOpacity: 0.08 }).addTo(map);
+    else rect.setBounds(b);
+  });
+  const end = async e => {
+    if (!start) return;
+    const a = start, b = map.mouseEventToContainerPoint(e);
+    start = null;
+    if (mode !== 'box') map.dragging.enable();
+    const r = rect; rect = null;
+    if (Math.abs(a.x - b.x) < 6 && Math.abs(a.y - b.y) < 6) { if (r) r.remove(); return; }   // 沒有拖動：當一般點選
+    drew = Date.now();
+    const corners = [[a.x, a.y], [b.x, a.y], [b.x, b.y], [a.x, b.y]].map(([x, y]) => { const q = map.containerPointToLatLng([x, y]); return tm(q.lat, q.lng); });
+    try { await boxSelect([[closeRing(corners)]]); }
+    finally { if (r) setTimeout(() => r.remove(), 500); }
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', () => { start = null; if (rect) { rect.remove(); rect = null; } if (mode !== 'box') map.dragging.enable(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && mode === 'box') setMode('click'); });
+  return { justDrew: () => Date.now() - drew < 400, setMode };
+})();
+
+async function boxSelect(mp) {   // 碰到框的宗地都算
+  if (!Guard.hit('query')) return smsg(BUSY, 'err');
+  smsg('框選中…');
+  let res;
+  try { res = await lotsInArea(mp, 0, { maxSections: 12 }); } catch (e) { return smsg(e.message, 'err'); }
+  if (res.outside) return smsg(OUTSIDE(), 'err');
+  if (res.tooBig) return smsg(`框選範圍太大（跨 ${res.tooBig} 個地段），請放大地圖後再框選。`, 'err');
+  if (!res.lots.length) return smsg('框內沒有宗地。', 'err');
+  const r = addArea(res.lots, { limit: LIMIT.box, what: '框選' });
+  if (r.err) { smsg(r.err, 'err'); if (r.over) warn('超過框選上限', r.err); return; }
+  smsg(r.added ? `框選加入 ${r.added} 筆，目前共 ${r.total} 筆。` : '框內的宗地已在選取中。', r.added ? 'ok' : '');
+}
+
+// KML／KMZ：讀取檔案中的面（Polygon），選取範圍內的宗地。檔案只在瀏覽器內讀取，不會上傳。
+let fflateP = null;
+function loadFflate() {
+  if (window.fflate) return Promise.resolve();
+  return fflateP || (fflateP = new Promise((ok, no) => {
+    const s = document.createElement('script'); s.src = 'lib/fflate.min.js';
+    s.onload = ok; s.onerror = () => { fflateP = null; no(new Error('解壓縮元件載入失敗')); };
+    document.head.appendChild(s);
+  }));
+}
+async function readKmlText(file) {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  if (buf[0] === 0x50 && buf[1] === 0x4b) {                    // PK：KMZ（zip）
+    await loadFflate();
+    let files;
+    try { files = fflate.unzipSync(buf, { filter: f => /\.kml$/i.test(f.name) }); } catch { throw new Error('KMZ 解壓縮失敗，檔案可能損毀。'); }
+    const names = Object.keys(files).sort((a, b) => (/(^|\/)doc\.kml$/i.test(b) - /(^|\/)doc\.kml$/i.test(a)) || a.length - b.length);
+    if (!names.length) throw new Error('KMZ 內找不到 KML 檔。');
+    return new TextDecoder('utf-8').decode(files[names[0]]);
+  }
+  return new TextDecoder('utf-8').decode(buf);
+}
+function parseKml(text) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('KML 格式錯誤，無法讀取。');
+  const coords = node => (node ? node.textContent.trim().split(/\s+/).map(t => t.split(',').map(Number)).filter(c => c.length >= 2 && isFinite(c[0]) && isFinite(c[1])) : []);
+  const first = (n, tag) => n.getElementsByTagNameNS('*', tag)[0];
+  const polys = [];
+  let lonlat = [];
+  for (const pg of doc.getElementsByTagNameNS('*', 'Polygon')) {
+    const ob = first(pg, 'outerBoundaryIs'); if (!ob) continue;
+    const outer = coords(first(ob, 'coordinates'));
+    if (outer.length < 3) continue;
+    const inners = [...pg.getElementsByTagNameNS('*', 'innerBoundaryIs')].map(ib => coords(first(ib, 'coordinates'))).filter(r => r.length >= 3);
+    polys.push([outer, ...inners]); lonlat.push(...outer);
+  }
+  let lines = 0;
+  for (const ls of doc.getElementsByTagNameNS('*', 'LineString')) {         // 頭尾相接的線也當成範圍
+    const c = coords(first(ls, 'coordinates'));
+    if (c.length >= 4) {
+      const [x0, y0] = P.inverse([c[0][0], c[0][1]]), [x1, y1] = P.inverse([c[c.length - 1][0], c[c.length - 1][1]]);
+      if (Math.hypot(x1 - x0, y1 - y0) < 1) { polys.push([c]); lonlat.push(...c); continue; }
+    }
+    lines++;
+  }
+  return { polys, lonlat, lines };
+}
+async function kmlSelect(file) {
+  smsg('');
+  if (!/\.(kml|kmz)$/i.test(file.name)) return smsg('請上傳 .kml 或 .kmz 檔。', 'err');
+  if (file.size > 5e6) return smsg('檔案超過 5 MB，請只保留要圈選的範圍。', 'err');
+  if (automated) return smsg('偵測到自動化瀏覽器，本站不提供此功能。', 'err');
+  if (!Guard.hit('kml')) return smsg(BUSY, 'err');
+  smsg('讀取 ' + file.name + '…');
+  let k;
+  try { k = parseKml(await readKmlText(file)); } catch (e) { return smsg(e.message, 'err'); }
+  if (!k.polys.length) return smsg(`檔案中沒有找到面（多邊形）${k.lines ? `，只有 ${k.lines} 條未封閉的線` : ''}。請在 Google Earth 用「新增多邊形」畫出範圍，再另存成 KML／KMZ。`, 'err');
+  if (k.lonlat.every(([lon, lat]) => lon < 119 || lon > 123 || lat < 21 || lat > 26.5)) {
+    kmlGroup.clearLayers();
+    return smsg(OUTSIDE(), 'err');
+  }
+  // 經緯度 → TWD97，多個面合併成一個範圍
+  let mp = k.polys.map(p => p.map(r => closeRing(r.map(([lon, lat]) => P.inverse([lon, lat])))));
+  try { mp = polygonClipping.union(...mp.map(p => [p])); } catch {}
+  kmlGroup.clearLayers();
+  const outline = L.polygon(mp.map(p => p.map(r => r.map(([x, y]) => ll(x, y)))),
+    { interactive: false, color: '#e8590c', weight: 2.5, dashArray: '8 5', fill: true, fillOpacity: 0.04 }).addTo(kmlGroup);
+  map.fitBounds(outline.getBounds(), { padding: [30, 30], maxZoom: 19, animate: false });
+  if (map.getZoom() < LOT_ZOOM && outline.getBounds().isValid()) map.setZoom(LOT_ZOOM, { animate: false });
+  smsg('圈選中…');
+  let res;
+  try { res = await lotsInArea(mp, 0.05, { checkOutside: true, maxSections: 30 }); } catch (e) { return smsg(e.message, 'err'); }
+  if (res.outside) return smsg(OUTSIDE(), 'err');
+  if (res.tooBig) return smsg(`範圍太大（跨 ${res.tooBig} 個地段），請縮小範圍。`, 'err');
+  const note = (res.partOutside ? '部分範圍超出本站資料區（非屬本網站供應資料），只選取資料區內的宗地。' : '') +
+    (res.edge ? `另有 ${res.edge} 筆只在邊緣些微重疊（不到 5%），未選入。` : '');
+  if (!res.lots.length) return smsg(res.partOutside ? OUTSIDE() : '範圍內沒有宗地。', 'err');
+  const r = addArea(res.lots, { limit: LIMIT.kml, replace: true, what: 'KML ' });
+  if (r.err) { smsg(r.err, 'err'); if (r.over) warn('超過圈選上限', r.err); return; }
+  smsg(`已圈選 ${r.total} 筆（${file.name}）。` + note, note ? '' : 'ok');
+  map.fitBounds(outline.getBounds(), { padding: [30, 30], maxZoom: 19, animate: false });
+  if (map.getZoom() < LOT_ZOOM) map.setZoom(LOT_ZOOM, { animate: false });
+}
+$('kmlBtn').addEventListener('click', () => $('kmlFile').click());
+$('kmlFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  $('kmlBtn').classList.add('busy');
+  try { await kmlSelect(f); } finally { $('kmlBtn').classList.remove('busy'); }
+});
+
 // ---------- 下載 ----------
 function save(name, text, type) {
   const blob = new Blob([text], { type });
@@ -652,7 +909,7 @@ function checkDownload(kind) {
   const lots = [...S.sel.values()];
   if (automated) return '偵測到自動化瀏覽器，本站不提供自動下載。';
   if (!lots.length) return '尚未選取宗地。';
-  if (lots.length > MAX_SEL) return `一次最多下載 ${MAX_SEL} 筆。`;
+  if (lots.length > Math.min(S.cap, MAX_SEL)) return `一次最多下載 ${Math.min(S.cap, MAX_SEL)} 筆。`;
   if (new Set(lots.map(l => l.d)).size > 1) return '不能跨區下載，請只保留同一行政區的宗地。';
   if (!Guard.hit(kind)) return BUSY;
   return '';

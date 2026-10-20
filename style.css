@@ -64,8 +64,16 @@ h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
 .chip-demo { color: var(--warn); border-color: currentColor; }
 
 .app { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); }
-.mapwrap { position: relative; min-height: 0; }
+/* 地圖縮為 70% 置中，四周留白（日後可放廣告）；比例改 --map-scale 即可 */
+.mapwrap { --map-scale: 70%; position: relative; min-height: 0; display: grid; place-items: center; }
+.mapframe {
+  position: relative; width: var(--map-scale); height: var(--map-scale);
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
 #map { position: absolute; inset: 0; background: var(--paper); }
+#map.boxmode, #map.boxmode .leaflet-interactive { cursor: crosshair !important; }
+.boxrect { pointer-events: none; }
 .status {
   position: absolute; left: 10px; bottom: 22px; z-index: 500; max-width: calc(100% - 20px);
   background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 4px;
@@ -158,6 +166,16 @@ select:focus-visible, input:focus-visible, .btn:focus-visible, .link:focus-visib
 .msg.err { color: var(--cad); }
 .msg.ok { color: var(--sel); }
 
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.modes .mode { border-radius: 0; }
+.modes .mode:first-child { border-radius: 4px 0 0 4px; }
+.modes .mode:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.modes .mode.on { background: var(--sel); border-color: var(--sel); color: var(--panel); position: relative; z-index: 1; }
+.modes .mode.on:hover { color: var(--panel); }
+.upload { text-align: center; display: block; }
+.upload:hover { border-color: var(--sel); color: var(--sel); }
+.upload.busy { opacity: 0.6; pointer-events: none; }
+
 .selhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .count { font-family: var(--f-num); color: var(--sel); font-weight: 500; margin-left: 4px; }
 .sum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -180,6 +198,17 @@ select:focus-visible, input:focus-visible, .btn:focus-visible, .link:focus-visib
 .dl .dlmsg:empty { display: none; }
 .src { padding: 14px 16px 18px; font-size: 12px; color: var(--muted); }
 
+/* 警告視窗 */
+.warn {
+  width: min(420px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--line); border-top: 4px solid var(--cad);
+  border-radius: 8px; background: var(--panel); color: var(--ink); box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+}
+.warn::backdrop { background: rgba(0, 0, 0, 0.35); }
+.warn h3 { margin: 0 0 8px; font-size: 17px; color: var(--cad); }
+.warn h3::before { content: "⚠ "; }
+.warn p { margin: 0 0 16px; font-size: 14.5px; line-height: 1.6; }
+.warn-act { display: flex; justify-content: flex-end; }
+
 /* 地圖上的標籤 */
 .lotno {
   font: 500 11px/1 var(--f-num); color: var(--cad); white-space: nowrap; text-align: center;
@@ -193,7 +222,8 @@ select:focus-visible, input:focus-visible, .btn:focus-visible, .link:focus-visib
 @media (max-width: 760px) {
   body { height: auto; min-height: 100%; }
   .app { grid-template-columns: minmax(0, 1fr); }
-  .mapwrap { height: 56vh; }
+  .mapwrap { height: 56vh; --map-scale: 100%; }
+  .mapframe { border: 0; border-radius: 0; box-shadow: none; }
   .panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
   .block, .src { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 }

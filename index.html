@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="lib/leaflet.css">
-<link rel="stylesheet" href="style.css?v=20261020d">
+<link rel="stylesheet" href="style.css?v=20261020f">
 </head>
 <body>
 <header class="bar">
@@ -30,8 +30,11 @@
 
 <main class="app">
   <div class="mapwrap">
-    <div id="map" aria-label="地籍地圖"></div>
-    <div class="status" id="status">載入地段資料…</div>
+    <!-- 地圖縮為 70% 置中；四周空白日後可放廣告 -->
+    <div class="mapframe">
+      <div id="map" aria-label="地籍地圖"></div>
+      <div class="status" id="status">載入地段資料…</div>
+    </div>
   </div>
 
   <aside class="panel">
@@ -66,15 +69,27 @@
       <p class="msg" id="msg" role="status" aria-live="polite"></p>
     </section>
 
+    <section class="block">
+      <h2>範圍選取</h2>
+      <div class="modes" role="group" aria-label="選取方式">
+        <button type="button" class="btn mode on" id="modeClick" aria-pressed="true">單筆點選</button>
+        <button type="button" class="btn mode" id="modeBox" aria-pressed="false">框選</button>
+      </div>
+      <button type="button" class="btn upload" id="kmlBtn">上傳 KML／KMZ 圈選</button>
+      <input type="file" id="kmlFile" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" hidden>
+      <p class="hint" id="modeHint">單筆點選：在地圖上點宗地加入或移除，最多 10 筆。按住 Shift 拖曳也可以框選。</p>
+      <p class="msg" id="smsg" role="status" aria-live="polite"></p>
+    </section>
+
     <section class="block grow">
       <div class="selhead">
-        <h2>已選宗地 <span class="count" id="selCount">0</span></h2>
+        <h2>已選宗地 <span class="count" id="selCount">0 / 10</span></h2>
         <div class="selbtns">
           <button type="button" class="link" id="zoomSel" disabled>縮放至選取</button>
           <button type="button" class="link" id="clearSel" disabled>清除</button>
         </div>
       </div>
-      <div class="sum" id="selSum">尚未選取。在地圖上點宗地或用地號查詢加入。</div>
+      <div class="sum" id="selSum">尚未選取。在地圖上點宗地、框選、上傳 KML／KMZ 或用地號查詢加入，限同一行政區。</div>
       <ol class="sellist" id="selList"></ol>
       <p class="hint" id="zoneHint" hidden>使用分區由地籍圖與臺中市都市計畫圖（114 年版）套疊推估；非都市土地依地籍登記。僅供參考，正式分區以都市發展局核發之分區證明為準。</p>
     </section>
@@ -83,7 +98,7 @@
       <button type="button" class="btn primary" id="dlDxf" disabled>下載 DXF</button>
       <button type="button" class="btn" id="dlCsv" disabled>下載清單 CSV</button>
       <p class="msg dlmsg" id="dlmsg" role="status" aria-live="polite"></p>
-      <p class="hint">一次最多 10 筆，限同一行政區。DXF 為 AutoCAD 2010 格式，坐標 TWD97 TM2（EPSG:3826），單位公尺。</p>
+      <p class="hint">單筆點選或地號查詢最多 10 筆、框選最多 50 筆、KML／KMZ 圈選最多 100 筆，皆限同一行政區。DXF 為 AutoCAD 2010 格式，坐標 TWD97 TM2（EPSG:3826），單位公尺。</p>
     </section>
 
     <footer class="src">
@@ -92,11 +107,17 @@
   </aside>
 </main>
 
+<dialog id="warnDlg" class="warn" aria-labelledby="warnTitle">
+  <h3 id="warnTitle">警告</h3>
+  <p id="warnText"></p>
+  <div class="warn-act"><button type="button" class="btn primary" id="warnOk">我知道了</button></div>
+</dialog>
+
 <script src="lib/leaflet.js"></script>
 <script src="lib/proj4.js"></script>
 <script src="lib/polygon-clipping.umd.min.js"></script>
-<script src="dxf-template.js?v=20261020d"></script>
-<script src="dxf.js?v=20261020d"></script>
-<script src="app.js?v=20261020d"></script>
+<script src="dxf-template.js?v=20261020f"></script>
+<script src="dxf.js?v=20261020f"></script>
+<script src="app.js?v=20261020f"></script>
 </body>
 </html>

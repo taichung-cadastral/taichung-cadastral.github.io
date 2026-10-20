@@ -95,6 +95,30 @@ function buildDXF(lots, TPL, OWNER, pieces, table) {
   }
 
   let dxf = TPL;
+
+  // 開啟時的畫面：視窗中心放在地籍（含地籍清單）的中間，並縮放到全部看得到。
+  // 否則 AutoCAD 開啟時停在原點附近，TWD97 坐標的圖形在畫面外，看起來像空白。
+  let ex0 = Infinity, ey0 = Infinity, ex1 = -Infinity, ey1 = -Infinity;
+  const grow = (x, y) => { if (x < ex0) ex0 = x; if (y < ey0) ey0 = y; if (x > ex1) ex1 = x; if (y > ey1) ey1 = y; };
+  for (let i = 0; i < out.length - 3; i++) {
+    if (out[i] === ' 10' && out[i + 2] === ' 20') { const x = +out[i + 1], y = +out[i + 3]; if (x || y) grow(x, y); }
+    else if (out[i] === ' 11' && out[i + 2] === ' 21') { const x = +out[i + 1], y = +out[i + 3]; if (x || y) grow(x, y); }
+  }
+  if (ex0 <= ex1) {
+    const cx = (ex0 + ex1) / 2, cy = (ey0 + ey1) / 2;
+    const vh = Math.max(ey1 - ey0, (ex1 - ex0) / 1.6, 10) * 1.12;   // 以 16:10 螢幕估算，四周留白
+    const F = v => v.toFixed(3);
+    dxf = dxf
+      .replace(/(\$EXTMIN\n 10\n)[^\n]+\n 20\n[^\n]+\n 30\n[^\n]+/, `$1${F(ex0)}\n 20\n${F(ey0)}\n 30\n0.0`)
+      .replace(/(\$EXTMAX\n 10\n)[^\n]+\n 20\n[^\n]+\n 30\n[^\n]+/, `$1${F(ex1)}\n 20\n${F(ey1)}\n 30\n0.0`)
+      // VPORT *Active：12/22 視窗中心、40 視窗高度、41 長寬比
+      .replace(/(\*Active\n[\s\S]*? 12\n)[^\n]+\n 22\n[^\n]+/, `$1${F(cx)}\n 22\n${F(cy)}`)
+      .replace(/(\*Active\n[\s\S]*? 40\n)[^\n]+\n 41\n[^\n]+/, `$1${F(vh)}\n 41\n1.6`)
+      // 模型配置的圖形範圍
+      .replace(/(AcDbLayout\n  1\nModel\n[\s\S]*? 14\n)[^\n]+\n 24\n[^\n]+\n 34\n[^\n]+\n 15\n[^\n]+\n 25\n[^\n]+\n 35\n[^\n]+/,
+        `$1${F(ex0)}\n 24\n${F(ey0)}\n 34\n0.0\n 15\n${F(ex1)}\n 25\n${F(ey1)}\n 35\n0.0`);
+  }
+
   // 圖層表：加入用到的分區圖層，移除沒用到的基本圖層（0 號圖層保留）
   const used = new Set(out.filter((v, i) => out[i - 1] === '  8'));
   const zl = [...new Map(pieces.map(p => [p.layer, p])).values(), ...extraLayers];
