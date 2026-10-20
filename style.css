@@ -51,6 +51,11 @@ h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
 .meta .sep { margin: 0 6px; color: var(--line); }
 .meta.notice { color: var(--warn); }
 .meta.notice a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.meta.notice .big-link {
+  font-size: 3em; font-weight: 700; line-height: 1.15; color: var(--cad);
+  text-underline-offset: 6px; text-decoration-thickness: 2px; margin: 0 4px; display: inline-block; max-width: 100%; white-space: nowrap;
+}
+.meta.notice .big-link:hover { color: var(--sel); }
 .meta a { color: var(--sel); text-decoration: none; }
 .meta a:hover { text-decoration: underline; }
 .meta a:focus-visible { outline: 2px solid var(--sel); outline-offset: 1px; border-radius: 2px; }
