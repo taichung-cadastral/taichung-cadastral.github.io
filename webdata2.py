@@ -4,7 +4,7 @@ from shapely.geometry import Polygon, shape as gshape
 from shapely import STRtree, force_2d, make_valid
 ZSRC = os.path.expanduser('~/work/zone/01-SHP/114期末_U0002_1210')
 ZATTR = os.path.expanduser('~/work/web_z/zone-attrs.json')
-ZD = {'中區','東區','南區','西區','北區','西屯區','南屯區','北屯區','太平區'}
+ZD = {'中區','東區','南區','西區','北區','西屯區','南屯區','北屯區','太平區','潭子區'}
 SRC = os.path.expanduser('~/work/src/Land11505/')
 OUT = sys.argv[1]; dists = set(sys.argv[2:])
 os.makedirs(OUT + '/lots', exist_ok=True)

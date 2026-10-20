@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>更新說明｜臺中市地籍圖 DXF 下載</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M1.5 1.5h13v13h-13zM4 4h6v6H4z%27 fill=%27none%27 stroke=%27%23c23a2b%27 stroke-width=%271.6%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { height: auto; min-height: 100%; }
+  .about {
+    flex: 1; width: 100%; max-width: 760px; margin: 0 auto;
+    padding-block: 32px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .card-head { padding: 24px 28px 20px; border-bottom: 3px solid var(--cad); }
+  .card-head .label { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.18em; color: var(--muted); }
+  .card-head h2 { font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: 0.02em; }
+  .card-head h2 .en { font-family: var(--f-body); }
+  .card-head .role { margin: 6px 0 0; font-size: 16px; font-weight: 500; color: var(--ink); }
+  .card-body { padding: 8px 28px 24px; display: grid; gap: 0; }
+  .row { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 16px; padding-block: 16px; border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--cad); letter-spacing: 0.12em; padding-top: 1px; }
+  .row ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 15px; }
+  .row li { min-width: 0; overflow-wrap: anywhere; }
+  .row li .org { color: var(--ink); font-weight: 500; }
+  .row li .pos { color: var(--muted); }
+  .row li .pos::before { content: "｜"; margin: 0 2px; color: var(--line); }
+  .back { font-size: 13px; color: var(--sel); text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  @media (max-width: 560px) {
+    .card-head, .card-body { padding-left: 18px; padding-right: 18px; }
+    .row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  }
+  .log { display: grid; gap: 0; }
+  .ver { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 16px; padding-block: 18px; border-bottom: 1px dashed var(--line); }
+  .ver:last-child { border-bottom: 0; }
+  .ver time { font-family: var(--f-num); font-size: 14px; font-weight: 500; color: var(--cad); padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .ver ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: 15px; }
+  .ver li { min-width: 0; overflow-wrap: anywhere; }
+  .ver li b { font-weight: 700; }
+  .ver .tag { display: inline-block; font-size: 12px; line-height: 1.6; padding: 0 7px; margin-right: 6px; border-radius: 999px; border: 1px solid currentColor; vertical-align: 1px; }
+  .tag.new { color: var(--cad); }
+  .tag.imp { color: var(--sel); }
+  .tag.fix { color: var(--muted); }
+  @media (max-width: 560px) { .ver { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div class="brand-text">
+      <h1>臺中市地籍圖 DXF 下載</h1>
+      <p class="meta">更新說明</p>
+    </div>
+  </div>
+  <a class="back" href="index.html">回到地籍圖</a>
+</header>
+
+<main class="about">
+  <article class="card">
+    <div class="card-head">
+      <p class="label">更新說明</p>
+      <h2>目前提供範圍</h2>
+      <p class="role">中區、東區、南區、西區、北區、西屯區、南屯區、北屯區、潭子區、太平區，共 509 個地段、540,371 筆宗地。臺中市其他地區持續更新中。</p>
+    </div>
+    <div class="card-body log">
+      <section class="ver">
+        <time datetime="2026-10-20">115.10.20</time>
+        <ul>
+          <li><span class="tag new">新增</span><b>潭子區</b>地籍：49 個地段、55,163 筆宗地，含豐潭雅神地區都市計畫使用分區；非都市土地依地籍登記之使用分區及使用地類別。</li>
+          <li><span class="tag imp">改善</span>「地段」欄可直接輸入段名、段代碼或行政區搜尋，同名地段會標示所在行政區。</li>
+          <li><span class="tag fix">修正</span>下載 DXF 與下載清單 CSV 分開計算次數，下載結果顯示在按鈕下方。</li>
+          <li><span class="tag new">新增</span>作者簡介、更新說明。</li>
+          <li><span class="tag new">上線</span>舊臺中市 8 區及太平區：以地號查詢或地圖點選宗地，下載 DXF（TWD97 坐標，含使用分區色塊、地籍清單）與清單 CSV；可開啟地籍圖層、使用分區圖層。</li>
+        </ul>
+      </section>
+    </div>
+  </article>
+</main>
+</body>
+</html>
